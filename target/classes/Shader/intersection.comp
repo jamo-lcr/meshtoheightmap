@@ -1,0 +1,77 @@
+#version 440
+
+layout (local_size_x = 256) in;
+
+layout (std430, binding = 0) buffer TriangleBuffer {
+    vec3 triangles[]; // Array of triangles, each triangle has 3 vertices
+};
+
+layout (std430, binding = 1) buffer RayBuffer {
+    vec3 rays[]; // Array of ray origins and directions
+};
+
+layout (std430, binding = 2) buffer IntersectionBuffer {
+    vec3 intersections[]; // Array to store intersection points
+};
+
+uniform int numRays; // Number of rays
+uniform int numTriangles; // Number of triangles
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= numRays) return;
+
+    const float EPSILON = 1e-6;
+
+    vec3 rayOrigin = rays[id * 2];     // Each ray has an origin and direction
+    vec3 rayDirection = rays[id * 2 + 1];
+
+    vec3 highestIntersection = vec3(-1.0, -1.0, -1.0); // Default to invalid point
+
+    for (int i = 0; i < numTriangles; i++) {
+        vec3 a = triangles[i * 3];     // Each triangle has 3 vertices
+        vec3 b = triangles[i * 3 + 1];
+        vec3 c = triangles[i * 3 + 2];
+
+        vec3 edge1 = b - a;
+        vec3 edge2 = c - a;
+
+        vec3 h = cross(rayDirection, edge2);
+        float dotProduct = dot(edge1, h);
+
+        if (dotProduct > -EPSILON && dotProduct < EPSILON) {
+            continue; // Ray is parallel to the triangle
+        }
+
+        float f = 1.0 / dotProduct;
+        vec3 s = rayOrigin - a;
+        float u = f * dot(s, h);
+
+        if (u+EPSILON < 0.0 || u > 1.0-EPSILON) {
+            continue; // Intersection point is outside the triangle
+        }
+
+        vec3 q = cross(s, edge1);
+        float v = f * dot(rayDirection, q);
+
+        if (v < 0.0 || u + v > 1.0 + EPSILON) {
+            continue; // Intersection point is outside the triangle
+        }
+
+        float t = f * dot(edge2, q);
+
+        if (t > EPSILON) {
+            // Ray intersection
+            vec3 currentIntersection = rayOrigin + rayDirection * t;
+
+            // Check if this intersection has a higher y-coordinate than the previous highest
+            if (currentIntersection.y > highestIntersection.y) {
+                highestIntersection = currentIntersection;
+            }
+        }
+    }
+
+    // Output for debugging: 
+    // Output highestIntersection to the intersection buffer
+    intersections[id] = highestIntersection;
+}
