@@ -15,7 +15,6 @@
         <lwjgl.version>3.3.4</lwjgl.version>
         <lwjgl.natives>natives-windows</lwjgl.natives> <!-- Change this based on your platform -->
     </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -100,7 +99,15 @@
                     </execution>
                 </executions>
             </plugin>
-
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.8.1</version> <!-- Or a compatible version -->
+            <configuration>
+                <source>1.8</source>
+                <target>1.8</target>
+            </configuration>
+        </plugin>
             <!-- Maven Dependency Plugin to copy native libraries -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -123,6 +130,7 @@
             </plugin>
 
             <!-- Optional: JavaFX Maven Plugin if needed -->
+            
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -133,5 +141,6 @@
             </plugin>
         </plugins>
     </build>
+
     
 </project>
